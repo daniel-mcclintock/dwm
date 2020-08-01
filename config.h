@@ -1,21 +1,40 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
+static const unsigned int borderpx  = 4;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
-static const int showbar            = 1;        /* 0 means no bar */
+static const int showbar            = 0;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "monospace:size=10" };
-static const char dmenufont[]       = "monospace:size=10";
+static const char *fonts[]          = { "Hermit:size=9" };
+static const char dmenufont[]       = "Hermit:size=9";
+/*
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#005577";
 static const char *colors[][3]      = {
-	/*               fg         bg         border   */
+	//               fg         bg         border
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+};
+*/
+// nord-ish colors
+static const char nord_bg[]         = "#2e3440";
+static const char nord_fg[]         = "#81a1c1";
+static const char nord_border[]     = "#81a1c1";
+static const char nord_red[]        = "#bf616a";
+static const char nord_white[]      = "#eceff4";
+
+// extra color schemes for different areas for more control
+static const char *colors[][3]      = {
+    //                    fg            bg          border
+    [SchemeNorm]    =   { nord_border,  nord_bg,    nord_bg},
+    [SchemeSel]     =   { nord_bg,      nord_fg,    nord_border},
+    [SchemeStatus]  =   { nord_white,   nord_bg,    nord_border},
+//    [SchemeLayout]  =   { nord_red,     nord_bg,    nord_border},
+//    [SchemeTag]     =   { nord_white,   nord_bg,    nord_border},
+//    [SchemeTagSel]  =   { nord_bg,      nord_fg,    nord_border}
 };
 
 /* tagging */
@@ -27,14 +46,13 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	{NULL,  NULL,       "fzf_run",       0,       1,           -1 },
 };
 
 /* layout(s) */
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
@@ -44,32 +62,40 @@ static const Layout layouts[] = {
 };
 
 /* key definitions */
+#define HOLDKEY XK_Alt_L// replace 0 with the keysym to activate holdbar
 #define MODKEY Mod1Mask
 #define TAGKEYS(KEY,TAG) \
 	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+	{ MODKEY,                       KEY,      holdbar,           {0} },  \
 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
 	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
-#define HOLDKEY 0 // replace 0 with the keysym to activate holdbar
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
+static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", nord_bg, "-nf", nord_white, "-sb", nord_border, "-sf", nord_bg, "-l", "16", NULL };
+static const char *fzf_menucmd[] = { "st", "-g", "38x32+32+64", "-t", "fzf_run", "-e", "fzf_run", NULL };
 static const char *termcmd[]  = { "st", NULL };
-static const char scratchpadname[] = "scratchpad";
-static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 
+static const char scratchpadname[] = "scratchpad";
+static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", "nvim", "/home/smelly/.notes", NULL };
+static const char *offset_border[] = { "xdotool", "getactivewindow", "windowmove", "--", "-8", "-8", NULL };
+
+#include "push.c"
 static Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+	{ MODKEY,                       XK_p,      spawn,          {.v = fzf_menucmd } },
+	{ MODKEY,                       XK_c,      spawn,          {.v = offset_border } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
-	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
+    { MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
+    { MODKEY|ShiftMask|ControlMask, XK_j,      pushdown,       {0} },
+    { MODKEY|ShiftMask|ControlMask, XK_k,      pushup,       {0} },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
